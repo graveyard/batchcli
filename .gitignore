@@ -10,5 +10,6 @@
 # golang
 build
 release
+vendor
 cmd/version.go
 cmd/batchcli

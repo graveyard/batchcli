@@ -1,0 +1,6 @@
+package: github.com/Clever/batchcli
+import:
+- package: github.com/aws/aws-sdk-go
+  version: ^1.6.25
+  subpackages:
+  - aws/credentials/ec2rolecreds

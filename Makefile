@@ -11,13 +11,16 @@ BUILDS := \
 	build/$(EXECUTABLE)-v$(VERSION)-linux-amd64
 COMPRESSED_BUILDS := $(BUILDS:%=%.tar.gz)
 RELEASE_ARTIFACTS := $(COMPRESSED_BUILDS:build/%=release/%)
-.PHONY: test $(PKGS) clean release vendor
+.PHONY: test $(PKGS) clean release install_deps
 
 $(eval $(call golang-version-check,1.7))
 
 all: test build
 
 test: $(PKGS)
+
+$(GOPATH)/bin/glide:
+	@go get github.com/Masterminds/glide
 
 $(PKGS): golang-test-all-deps cmd/version.go
 	$(call golang-test-all,$@)
@@ -33,7 +36,7 @@ build/$(EXECUTABLE)-v$(VERSION)-darwin-amd64:
 	GOARCH=amd64 GOOS=darwin go build -o "$@/$(EXECUTABLE)" $(PKG)
 build/$(EXECUTABLE)-v$(VERSION)-linux-amd64:
 	GOARCH=amd64 GOOS=linux go build -o "$@/$(EXECUTABLE)" $(PKG)
-build: $(BUILDS)
+build: cmd/version.go $(BUILDS) 
 
 %.tar.gz: %
 	tar -C `dirname $<` -zcvf "$<.tar.gz" `basename $<`
@@ -48,5 +51,5 @@ clean:
 	rm -rf build release
 	rm cmd/version.go
 
-vendor: golang-godep-vendor-deps
-	$(call golang-godep-vendor,$(PKGS))
+install_deps: $(GOPATH)/bin/glide
+	@$(GOPATH)/bin/glide install
