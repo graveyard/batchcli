@@ -4,3 +4,5 @@ import:
   version: ^1.6.25
   subpackages:
   - aws/credentials/ec2rolecreds
+- package: gopkg.in/Clever/kayvee-go.v6
+  version: ^6.5.3

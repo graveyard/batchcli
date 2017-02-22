@@ -7,7 +7,6 @@ PKG = github.com/Clever/batchcli/cmd
 PKGS := $(shell go list ./... | grep -v /vendor)
 EXECUTABLE := batchcli
 BUILDS := \
-	build/$(EXECUTABLE)-v$(VERSION)-darwin-amd64 \
 	build/$(EXECUTABLE)-v$(VERSION)-linux-amd64
 COMPRESSED_BUILDS := $(BUILDS:%=%.tar.gz)
 RELEASE_ARTIFACTS := $(COMPRESSED_BUILDS:build/%=release/%)
@@ -27,7 +26,7 @@ $(PKGS): golang-test-all-deps cmd/version.go
 
 build/*: cmd/version.go
 cmd/version.go: VERSION
-	@echo 'package cmd' > $@
+	@echo 'package main' > $@
 	@echo '' >> $@  # Write a go file that lints :)
 	@echo '// Version denotes the version of the executable' >> $@ # golint compliance
 	echo 'const Version = "$(VERSION)"' >> $@

@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"flag"
@@ -13,6 +13,8 @@ func main() {
 	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
 
 	printVersion := flag.Bool("version", false, "Print the version and exit")
+
+	flag.Parse()
 
 	if *printVersion {
 		fmt.Println(Version)
