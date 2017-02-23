@@ -7,7 +7,7 @@ Owned by eng-infra
 ## Usage
 
 ```
-gearcmd -name <job id> -input <key-id> -cmd <command>
+batchcli -cmd <command> cmd-args
 ```
 
 ## Shepherds

@@ -32,8 +32,7 @@ func (t TaskRunner) Process() error {
 	cmd.Env = os.Environ()
 
 	// Write the stdout and stderr of the process to both this process' stdout and stderr
-	// and also write it to a byte buffer so that we can return it with the Gearman job
-	// data as necessary.
+	// and also write to a byte buffer so that we can save it in the ResultsStore
 	var stderrbuf bytes.Buffer
 	var stdoutbuf bytes.Buffer
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrbuf)

@@ -7,24 +7,29 @@ import (
 )
 
 type BatchJob struct {
-	JobId              string
-	Queue              string
-	ComputeEnvironment string
-	DependencyIds      []string
+	JobId              string   // Required: AWS Batch JobId for this Job
+	Queue              string   // Required: AWS Batch Queue Name this Job was posted in
+	ComputeEnvironment string   // Required: AWS Batch Cluster Name running this container
+	DependencyIds      []string // Optional: JobIds that are dependencies for this Job run
 }
 
 // NewBatchJobFromEnv returns a new BatchJob by reading
-// values from the envrionment
+// values from the environment. Assumes this code is running
+// via AWS Batch
 func NewBatchJobFromEnv() (BatchJob, error) {
+	// Read environment variables injected by AWS Batch
 	jobId := os.Getenv("AWS_BATCH_JOB_ID")
 	queue := os.Getenv("AWS_BATCH_JQ_NAME")
 	computeEnv := os.Getenv("AWS_BATCH_CE_NAME")
 
+	// Should be all present if this Job is running via AWS Batch
 	if jobId == "" || queue == "" || computeEnv == "" {
 		return BatchJob{},
 			errors.New("AWS Batch environment variables not found")
 	}
 
+	// Optional env var with job-ids of dependencies
+	// Required if job results from dependencies need to be fetched
 	depsStr := os.Getenv("_BATCH_DEPEDENCIES")
 	dependencyIds := []string{}
 	if depsStr != "" {
@@ -39,6 +44,8 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 	}, nil
 }
 
+// NewMockBatchJob returns a new BatchJob with
+// mock values for tests and local runs
 func NewMockBatchJob(deps []string) BatchJob {
 	return BatchJob{
 		JobId:              "local",

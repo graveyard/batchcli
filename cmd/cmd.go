@@ -6,6 +6,9 @@ import (
 	"os"
 
 	"github.com/Clever/batchcli/runner"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
 func main() {
@@ -40,15 +43,14 @@ func main() {
 		job = j
 	}
 
-	if *resultsLocation == "" {
-		fmt.Println("-results-location can not be an empty string")
+	store, err := initalizeStore(*localRun, *resultsLocation)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	// TODO: use fake dynamo for localRun
-	store, err := runner.NewDynamoStore(*resultsLocation)
-	if err != nil {
-		fmt.Println(err)
+	if *resultsLocation == "" {
+		fmt.Println("-results-location can not be an empty string")
 		os.Exit(1)
 	}
 
@@ -63,4 +65,15 @@ func main() {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func initalizeStore(localRun bool, resultsLocation string) (runner.ResultsStore, error) {
+	// TODO: use fake dynamo for localRun
+	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-east-1")})
+	if err != nil {
+		return runner.DynamoStore{}, nil
+	}
+	client := dynamodb.New(sess)
+
+	return runner.NewDynamoStore(client, resultsLocation)
 }

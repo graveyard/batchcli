@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
 type ResultsStore interface {
@@ -15,8 +15,22 @@ type ResultsStore interface {
 }
 
 type DynamoStore struct {
-	client *dynamodb.DynamoDB
+	client dynamodbiface.DynamoDBAPI
 	table  string
+}
+
+// normalizeValue returns a truncated value if the length
+// of the input value is greater than 128 bytes
+func (d DynamoStore) normalizeValue(value string) string {
+	// TODO: maybe we also should enforce that values are JSON-only
+	// for now just enforce a length
+
+	// DynamoDB measures length via UTF-8 bytes, so does go
+	if len(value) > 128 {
+		return value[:128]
+	}
+
+	return value
 }
 
 func (d DynamoStore) writeResult(success bool, key string, result string) error {
@@ -26,7 +40,7 @@ func (d DynamoStore) writeResult(success bool, key string, result string) error 
 				S: aws.String(key),
 			},
 			"Result": {
-				S: aws.String(result),
+				S: aws.String(d.normalizeValue(result)),
 			},
 			"Success": {
 				BOOL: aws.Bool(true),
@@ -86,13 +100,10 @@ func (d DynamoStore) GetResults(keys []string) ([]string, error) {
 	return outputs, nil
 }
 
-func NewDynamoStore(table string) (ResultsStore, error) {
-	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-east-1")})
-	if err != nil {
-		return DynamoStore{}, err
+func NewDynamoStore(client dynamodbiface.DynamoDBAPI, table string) (ResultsStore, error) {
+	if table == "" {
+		return DynamoStore{}, fmt.Errorf("table name must be a non-empty string")
 	}
-
-	client := dynamodb.New(sess)
 
 	return DynamoStore{
 		client,
