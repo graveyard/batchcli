@@ -52,7 +52,7 @@ func (d DynamoStore) GetResults(keys []string) ([]string, error) {
 }
 
 func NewDynamoStore(table string) (ResultsStore, error) {
-	sess, err := session.NewSession()
+	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-east-1")})
 	if err != nil {
 		return DynamoStore{}, err
 	}
