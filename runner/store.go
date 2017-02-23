@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -48,7 +50,40 @@ func (d DynamoStore) Failure(key string, result string) error {
 }
 
 func (d DynamoStore) GetResults(keys []string) ([]string, error) {
-	return []string{}, nil
+	if len(keys) == 0 {
+		return []string{}, nil
+	}
+
+	fetchKeys := []map[string]*dynamodb.AttributeValue{}
+	for _, k := range keys {
+		fetchKeys = append(fetchKeys, map[string]*dynamodb.AttributeValue{
+			"Key": {S: aws.String(k)},
+		})
+	}
+
+	results, err := d.client.BatchGetItem(&dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			d.table: {
+				Keys: fetchKeys,
+			},
+		},
+	})
+	if err != nil {
+		return []string{}, err
+	}
+
+	// TODO: we should keep a sense of job-id and the success.
+	// For now just pull out the responses
+	if _, ok := results.Responses[d.table]; !ok {
+		return []string{}, fmt.Errorf("No response for keys %s in table: %s", keys, d.table)
+	}
+
+	var outputs = []string{}
+	for _, v := range results.Responses[d.table] {
+		outputs = append(outputs, *v["Result"].S)
+	}
+
+	return outputs, nil
 }
 
 func NewDynamoStore(table string) (ResultsStore, error) {

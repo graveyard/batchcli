@@ -11,9 +11,9 @@ import (
 func main() {
 	functionCmd := flag.String("cmd", "", "The command to run")
 	localRun := flag.Bool("local", false, "Local mode - auto-assigns random AWS Batch config")
-	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
-
 	printVersion := flag.Bool("version", false, "Print the version and exit")
+	resultsLocation := flag.String("results-location", "test-batch-workflows", "name of the table for getting and setting job results")
+	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
 
 	flag.Parse()
 
@@ -40,8 +40,13 @@ func main() {
 		job = j
 	}
 
+	if *resultsLocation == "" {
+		fmt.Println("-results-location can not be an empty string")
+		os.Exit(1)
+	}
+
 	// TODO: use fake dynamo for localRun
-	store, err := runner.NewDynamoStore("test-batch-workflows")
+	store, err := runner.NewDynamoStore(*resultsLocation)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
