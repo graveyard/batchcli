@@ -2,6 +2,7 @@ package runner
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -14,7 +15,7 @@ var log = logger.New("batchcli")
 type TaskRunner struct {
 	job    BatchJob
 	store  ResultsStore
-	cmd    []string
+	cmd    string
 	inputs []string
 }
 
@@ -27,9 +28,7 @@ func (t TaskRunner) Process() error {
 		"job-id": t.job.JobId,
 	})
 
-	args := append(t.cmd[1:], t.inputs...)
-	cmd := exec.Command(t.cmd[0:1], args...)
-
+	cmd := exec.Command(t.cmd, t.inputs...)
 	cmd.Env = os.Environ()
 
 	// Write the stdout and stderr of the process to both this process' stdout and stderr
@@ -41,19 +40,27 @@ func (t TaskRunner) Process() error {
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutbuf)
 
 	if err := cmd.Run(); err != nil {
-		t.store.Failure(t.job.JobId, stderrbuf.String())
+		if e := t.store.Failure(t.job.JobId, stderrbuf.String()); e != nil {
+			return fmt.Errorf("Failed to write failure: %s. reason: %s", err, e)
+		}
 		return err
 	}
 
-	t.store.Success(t.job.JobId, stdoutbuf.String())
-	return nil
+	return t.store.Success(t.job.JobId, stdoutbuf.String())
 }
 
-func NewTaskRunner(cmd []string, job BatchJob, store ResultsStore) (TaskRunner, error) {
-	inputs, err := store.GetResults(job.DependencyIds)
+func NewTaskRunner(cmd string, args []string, job BatchJob, store ResultsStore) (TaskRunner, error) {
+	results, err := store.GetResults(job.DependencyIds)
 	if err != nil {
 		return TaskRunner{}, err
 	}
+	// postfix the results of previous jobs on the cmd passed through
+	// the CLI
+	// example:
+	// 		batchcli -cmd echo hello there
+	// 		results = [{"json":"true"}, {}]
+	//      exec(echo, ["hello", "there", '{"json":"true"}', '{}'])
+	inputs := append(args, results...)
 
 	return TaskRunner{
 		job,

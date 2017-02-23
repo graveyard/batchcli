@@ -38,3 +38,12 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 		DependencyIds:      dependencyIds,
 	}, nil
 }
+
+func NewMockBatchJob(deps []string) BatchJob {
+	return BatchJob{
+		JobId:              "local",
+		Queue:              "fake-queue",
+		ComputeEnvironment: "local",
+		DependencyIds:      deps,
+	}
+}
