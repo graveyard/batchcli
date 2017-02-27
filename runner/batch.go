@@ -30,7 +30,7 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 
 	// Optional env var with job-ids of dependencies
 	// Required if job results from dependencies need to be fetched
-	depsStr := os.Getenv("_BATCH_DEPEDENCIES")
+	depsStr := os.Getenv("_BATCH_DEPENDENCIES")
 	dependencyIds := []string{}
 	if depsStr != "" {
 		dependencyIds = strings.Split(depsStr, ",")
