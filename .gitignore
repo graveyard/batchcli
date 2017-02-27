@@ -1,0 +1,15 @@
+# osx / sshfs
+._*
+.DS_Store
+
+# emacs / vim
+*~
+\#*\#
+.\#*
+
+# golang
+build
+release
+vendor
+cmd/version.go
+cmd/batchcli
