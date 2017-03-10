@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"gopkg.in/Clever/kayvee-go.v6/logger"
 )
@@ -23,9 +24,10 @@ type TaskRunner struct {
 // environment and command line params
 func (t TaskRunner) Process() error {
 	log.InfoD("exec-command", map[string]interface{}{
-		"inputs": t.inputs,
-		"cmd":    t.cmd,
-		"job-id": t.job.JobId,
+		"inputs":       t.inputs,
+		"cmd":          t.cmd,
+		"job-id":       t.job.JobId,
+		"dependencies": strings.Join(t.job.DependencyIds, ","),
 	})
 
 	cmd := exec.Command(t.cmd, t.inputs...)
@@ -59,11 +61,7 @@ func NewTaskRunner(cmd string, args []string, job BatchJob, store ResultsStore) 
 	// 		batchcli -cmd echo hello there
 	// 		results = [{"json":"true"}, {}]
 	//      exec(echo, ["hello", "there", '{"json":"true"}', '{}'])
-	inputs := []string{}
-	if job.Input != "" {
-		inputs = append(args, job.Input)
-	}
-	inputs = append(inputs, results...)
+	inputs := append(args, results...)
 
 	return TaskRunner{
 		job,
