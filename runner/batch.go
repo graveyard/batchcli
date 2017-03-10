@@ -11,6 +11,7 @@ type BatchJob struct {
 	Queue              string   // Required: AWS Batch Queue Name this Job was posted in
 	ComputeEnvironment string   // Required: AWS Batch Cluster Name running this container
 	DependencyIds      []string // Optional: JobIds that are dependencies for this Job run
+	Input              string   // Optional: Input data recieved from workflow-manager
 }
 
 // NewBatchJobFromEnv returns a new BatchJob by reading
@@ -36,11 +37,15 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 		dependencyIds = strings.Split(depsStr, ",")
 	}
 
+	// Workflow input is passed as a string through this env var
+	input := os.Getenv("_BATCH_START")
+
 	return BatchJob{
 		JobId:              jobId,
 		Queue:              queue,
 		ComputeEnvironment: computeEnv,
 		DependencyIds:      dependencyIds,
+		Input:              input,
 	}, nil
 }
 

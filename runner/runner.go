@@ -59,7 +59,11 @@ func NewTaskRunner(cmd string, args []string, job BatchJob, store ResultsStore) 
 	// 		batchcli -cmd echo hello there
 	// 		results = [{"json":"true"}, {}]
 	//      exec(echo, ["hello", "there", '{"json":"true"}', '{}'])
-	inputs := append(args, results...)
+	inputs := []string{}
+	if job.Input != "" {
+		inputs = append(args, job.Input)
+	}
+	inputs = append(inputs, results...)
 
 	return TaskRunner{
 		job,
