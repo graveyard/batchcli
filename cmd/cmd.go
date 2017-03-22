@@ -15,7 +15,7 @@ func main() {
 	functionCmd := flag.String("cmd", "", "The command to run")
 	localRun := flag.Bool("local", false, "Local mode - auto-assigns random AWS Batch config")
 	printVersion := flag.Bool("version", false, "Print the version and exit")
-	resultsLocation := flag.String("results-location", "test-batch-workflows", "name of the table for getting and setting job results")
+	resultsLocation := flag.String("results-location", "workflows-dev-infra", "name of the table for getting and setting job results")
 	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
 
 	flag.Parse()
