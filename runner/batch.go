@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"strings"
@@ -11,6 +12,7 @@ type BatchJob struct {
 	Queue              string   // Required: AWS Batch Queue Name this Job was posted in
 	ComputeEnvironment string   // Required: AWS Batch Cluster Name running this container
 	DependencyIds      []string // Optional: JobIds that are dependencies for this Job run
+	Input              []string // Optional: Job input from the user
 }
 
 // NewBatchJobFromEnv returns a new BatchJob by reading
@@ -36,11 +38,21 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 		dependencyIds = strings.Split(depsStr, ",")
 	}
 
+	inputStr := os.Getenv("_BATCH_INPUT")
+	var input []string
+	if strings.TrimSpace(inputStr) != "" {
+		err := json.Unmarshal([]byte(inputStr), &input)
+		if err != nil {
+			return BatchJob{}, errors.New("_BATCH_INPUT is invalid JSON")
+		}
+	}
+
 	return BatchJob{
 		JobId:              jobId,
 		Queue:              queue,
 		ComputeEnvironment: computeEnv,
 		DependencyIds:      dependencyIds,
+		Input:              input,
 	}, nil
 }
 
