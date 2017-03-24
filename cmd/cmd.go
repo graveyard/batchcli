@@ -7,8 +7,6 @@ import (
 
 	"github.com/Clever/batchcli/runner"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -72,13 +70,13 @@ func main() {
 func initalizeStore(localRun bool, resultsLocation string) (runner.ResultsStore, error) {
 	// TODO: use fake dynamo for localRun
 	config := aws.NewConfig().WithRegion("us-east-1")
-	config.Credentials = credentials.NewCredentials(&credentials.ChainProvider{
-		VerboseErrors: false,
-		Providers: []credentials.Provider{
-			&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
-			defaults.RemoteCredProvider(*config, defaults.Handlers()),
-		},
-	})
+	//config.Credentials = credentials.NewCredentials(&credentials.ChainProvider{
+	//VerboseErrors: false,
+	//Providers: []credentials.Provider{
+	//&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
+	//defaults.RemoteCredProvider(*config, defaults.Handlers()),
+	//},
+	//})
 	sess, err := session.NewSession(config)
 
 	if err != nil {

@@ -38,7 +38,7 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 		dependencyIds = strings.Split(depsStr, ",")
 	}
 
-	inputStr := os.Getenv("_BATCH_INPUT")
+	inputStr := os.Getenv("_BATCH_START")
 	var input []string
 	if strings.TrimSpace(inputStr) != "" {
 		err := json.Unmarshal([]byte(inputStr), &input)
