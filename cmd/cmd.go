@@ -7,6 +7,9 @@ import (
 
 	"github.com/Clever/batchcli/runner"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -69,7 +72,17 @@ func main() {
 
 func initalizeStore(localRun bool, resultsLocation string) (runner.ResultsStore, error) {
 	// TODO: use fake dynamo for localRun
-	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-east-1")})
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-east-1"),
+		// override the default credential chain to disable envaccesskeys
+		Credentials: credentials.NewCredentials(&credentials.ChainProvider{
+			VerboseErrors: aws.BoolValue(cfg.CredentialsChainVerboseErrors),
+			Providers: []credentials.Provider{
+				&credProviderError{Err: awserr.New("SharedCredsLoad", fmt.Sprintf("failed to load profile, %s.", envCfg.Profile), nil)},
+				defaults.RemoteCredProvider(*cfg, handlers),
+			},
+		}),
+	})
 	if err != nil {
 		return runner.DynamoStore{}, nil
 	}
