@@ -43,7 +43,7 @@ func NewBatchJobFromEnv() (BatchJob, error) {
 	if strings.TrimSpace(inputStr) != "" {
 		err := json.Unmarshal([]byte(inputStr), &input)
 		if err != nil {
-			return BatchJob{}, errors.New("_BATCH_INPUT is invalid JSON")
+			return BatchJob{}, errors.New("_BATCH_START is invalid JSON")
 		}
 	}
 
