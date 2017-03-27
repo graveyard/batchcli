@@ -2,6 +2,8 @@ package runner
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -25,6 +27,7 @@ func (d DynamoStore) normalizeValue(value string) string {
 	// TODO: maybe we also should enforce that values are JSON-only
 	// for now just enforce a length
 
+	value = strings.TrimSpace(value)
 	// DynamoDB measures length via UTF-8 bytes, so does go
 	if len(value) > 128 {
 		return value[:128]
@@ -34,24 +37,33 @@ func (d DynamoStore) normalizeValue(value string) string {
 }
 
 func (d DynamoStore) writeResult(success bool, key string, result string) error {
-	_, err := d.client.PutItem(&dynamodb.PutItemInput{
+	doc := &dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{
 			"Key": {
 				S: aws.String(key),
 			},
-			"Result": {
-				S: aws.String(d.normalizeValue(result)),
+			"CompletedTime": {
+				S: aws.String(time.Now().UTC().Format(time.RFC3339Nano)),
 			},
 			"Success": {
 				BOOL: aws.Bool(true),
 			},
 		},
 		TableName: aws.String(d.table),
-	})
+	}
 
+	result = d.normalizeValue(result)
+	if result != "" {
+		doc.Item["Result"] = &dynamodb.AttributeValue{
+			S: aws.String(result),
+		}
+	}
+
+	_, err := d.client.PutItem(doc)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -94,7 +106,10 @@ func (d DynamoStore) GetResults(keys []string) ([]string, error) {
 
 	var outputs = []string{}
 	for _, v := range results.Responses[d.table] {
-		outputs = append(outputs, *v["Result"].S)
+		// ignore cases with empty results
+		if _, ok := v["Result"]; ok {
+			outputs = append(outputs, *v["Result"].S)
+		}
 	}
 
 	return outputs, nil
