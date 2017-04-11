@@ -15,7 +15,7 @@ func main() {
 	functionCmd := flag.String("cmd", "", "The command to run")
 	localRun := flag.Bool("local", false, "Local mode - auto-assigns random AWS Batch config")
 	printVersion := flag.Bool("version", false, "Print the version and exit")
-	resultsLocation := flag.String("results-location", "workflows-dev-infra", "name of the table for getting and setting job results")
+	resultsLocation := flag.String("results-location", "workflow-results-dev", "name of the table for getting and setting job results")
 	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
 
 	flag.Parse()
@@ -70,19 +70,10 @@ func main() {
 func initalizeStore(localRun bool, resultsLocation string) (runner.ResultsStore, error) {
 	// TODO: use fake dynamo for localRun
 	config := aws.NewConfig().WithRegion("us-east-1")
-	//config.Credentials = credentials.NewCredentials(&credentials.ChainProvider{
-	//VerboseErrors: false,
-	//Providers: []credentials.Provider{
-	//&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
-	//defaults.RemoteCredProvider(*config, defaults.Handlers()),
-	//},
-	//})
 	sess, err := session.NewSession(config)
-
 	if err != nil {
 		return runner.DynamoStore{}, nil
 	}
-	// override the default credential chain to disable envaccesskeys
 	client := dynamodb.New(sess)
 
 	return runner.NewDynamoStore(client, resultsLocation)
