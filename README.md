@@ -26,7 +26,8 @@ A policy of the following form be added to the _ECS Task Role_:
 }
 ```
 
-The name of the Dyanmo table can be changed using the `-results-location` flag. It defaults to `workflow-results-dev`.
+The name of the Dyanmo table can be changed using the `-results-location` flag. It defaults to `workflow-results` 
+if `AWS_BATCH_JQ_NAME` contains `production` else `workflow-results-dev`.
 
 ## Usage
 

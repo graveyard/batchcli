@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Clever/batchcli/runner"
 	"github.com/aws/aws-sdk-go/aws"
@@ -43,14 +44,21 @@ func main() {
 		job = j
 	}
 
-	store, err := initalizeStore(*localRun, *resultsLocation)
-	if err != nil {
-		fmt.Println(err)
+	if *resultsLocation == "" {
+		fmt.Println("-results-location can not be an empty string")
 		os.Exit(1)
 	}
 
-	if *resultsLocation == "" {
-		fmt.Println("-results-location can not be an empty string")
+	// TODO: figure out a better way to switch between prod/dev resultsLocations
+	// currently using env var since that easily works across docker containers
+	// which specify `CMD [..]` or `ENTRYPOINT [...]`
+	if strings.Contains(os.Getenv("AWS_BATCH_JQ_NAME"), "production") {
+		*resultsLocation = "workflow-results"
+	}
+
+	store, err := initalizeStore(*localRun, *resultsLocation)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
