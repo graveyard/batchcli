@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Clever/batchcli/runner"
 	"github.com/aws/aws-sdk-go/aws"
