@@ -29,8 +29,8 @@ func (d DynamoStore) normalizeValue(value string) string {
 
 	value = strings.TrimSpace(value)
 	// DynamoDB measures length via UTF-8 bytes, so does go
-	if len(value) > 128 {
-		return value[:128]
+	if len(value) > 10000 {
+		return value[:10000]
 	}
 
 	return value
