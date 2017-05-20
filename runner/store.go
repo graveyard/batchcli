@@ -46,7 +46,7 @@ func (d DynamoStore) writeResult(success bool, key string, result string) error 
 				S: aws.String(time.Now().UTC().Format(time.RFC3339Nano)),
 			},
 			"Success": {
-				BOOL: aws.Bool(true),
+				BOOL: aws.Bool(success),
 			},
 		},
 		TableName: aws.String(d.table),

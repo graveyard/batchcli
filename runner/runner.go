@@ -2,6 +2,7 @@ package runner
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -55,6 +56,23 @@ func NewTaskRunner(cmd string, args []string, job BatchJob, store ResultsStore) 
 	if err != nil {
 		return TaskRunner{}, err
 	}
+
+	// check if output is a JSON string -> if so use it as cmd args
+	// TODO: really need to think about this input/output format standardization
+	// for now deal with it the same way as _BATCH_START
+	var params []string
+	for _, result := range results {
+		var param []string
+		if strings.TrimSpace(result) != "" {
+			if err := json.Unmarshal([]byte(result), &param); err != nil {
+				// it's okay just add the raw string
+				params = append(params, result)
+			} else {
+				params = append(params, param...)
+			}
+		}
+	}
+
 	// postfix the results of previous jobs on the cmd passed through
 	// the CLI
 	// example:
