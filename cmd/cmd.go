@@ -72,6 +72,10 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	// TODO: fix this with a chan and proper buffer handling
+	// wait a sec for the output buffer to process
+
+	time.sleep(1 * time.Second)
 	os.Exit(0)
 }
 
