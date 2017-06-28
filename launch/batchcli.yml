@@ -6,4 +6,4 @@ resources:
 use_iam_roles: true
 shepherds:
   - "mohit.gupta@clever.com"
-team: eng-infra@clever.com
+team: eng-infra
