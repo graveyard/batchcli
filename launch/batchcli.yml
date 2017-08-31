@@ -1,7 +1,7 @@
 run:
   type: workflow
 resources:
-  cpu: 0.6
+  cpu: 1
   max_mem: 0.02
 use_iam_roles: true
 shepherds:
