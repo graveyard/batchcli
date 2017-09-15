@@ -2,36 +2,41 @@ package runner
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sfn"
+	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
 
 	"gopkg.in/Clever/kayvee-go.v6/logger"
 )
 
-var log = logger.New("batchcli")
+var log = logger.New("sfncli")
 
 type TaskRunner struct {
-	job    BatchJob
-	store  ResultsStore
-	cmd    string
-	inputs []string
+	sfnapi    sfniface.SFNAPI
+	taskToken string
+	cmd       string
+	inputs    []string
 }
 
 // Process runs the underlying cmd with the appropriate
 // environment and command line params
-func (t TaskRunner) Process() error {
+func (t TaskRunner) Process(ctx context.Context) error {
+	if t.sfnapi == nil {
+		return nil // if New failed :-/
+	}
 	log.InfoD("exec-command", map[string]interface{}{
-		"inputs":       t.inputs,
-		"cmd":          t.cmd,
-		"job-id":       t.job.JobId,
-		"dependencies": strings.Join(t.job.DependencyIds, ","),
+		"inputs": t.inputs,
+		"cmd":    t.cmd,
 	})
 
-	cmd := exec.Command(t.cmd, t.inputs...)
+	cmd := exec.CommandContext(ctx, t.cmd, t.inputs...)
 	cmd.Env = os.Environ()
 
 	// Write the stdout and stderr of the process to both this process' stdout and stderr
@@ -42,50 +47,54 @@ func (t TaskRunner) Process() error {
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutbuf)
 
 	if err := cmd.Run(); err != nil {
-		if e := t.store.Failure(t.job.JobId, stderrbuf.String()); e != nil {
-			return fmt.Errorf("Failed to write failure: %s. reason: %s", err, e)
+		if _, e := t.sfnapi.SendTaskFailureWithContext(ctx, &sfn.SendTaskFailureInput{
+			Cause:     aws.String(stderrbuf.String()), // TODO: limits on length?
+			TaskToken: &t.taskToken,
+		}); e != nil {
+			return fmt.Errorf("error sending task failure: %s", e)
 		}
 		return err
 	}
 
-	return t.store.Success(t.job.JobId, stdoutbuf.String())
+	// output must be JSON if it isn't make it so
+	output := stdoutbuf.String()
+	var test interface{}
+	if err := json.Unmarshal([]byte(output), &test); err != nil {
+		// output isn't JSON, make it json
+		newOutputBs, _ := json.Marshal(map[string]interface{}{
+			"raw": output,
+		})
+		output = string(newOutputBs)
+	}
+
+	_, err := t.sfnapi.SendTaskSuccessWithContext(ctx, &sfn.SendTaskSuccessInput{
+		Output:    aws.String(output), // TODO: limits on length?
+		TaskToken: &t.taskToken,
+	})
+	return err
 }
 
-func NewTaskRunner(cmd string, args []string, job BatchJob, store ResultsStore) (TaskRunner, error) {
-	results, err := store.GetResults(job.DependencyIds)
-	if err != nil {
-		return TaskRunner{}, err
-	}
-
-	// check if output is a JSON string -> if so use it as cmd args
-	// TODO: really need to think about this input/output format standardization
-	// for now deal with it the same way as _BATCH_START
+func NewTaskRunner(cmd string, args []string, sfnapi sfniface.SFNAPI, taskInput string, taskToken string) TaskRunner {
 	var params []string
-	for _, result := range results {
-		var param []string
-		if strings.TrimSpace(result) != "" {
-			if err := json.Unmarshal([]byte(result), &param); err != nil {
-				// it's okay just add the raw string
-				params = append(params, result)
-			} else {
-				params = append(params, param...)
-			}
-		}
+	if err := json.Unmarshal([]byte(taskInput), &params); err != nil {
+		sfnapi.SendTaskFailure(&sfn.SendTaskFailureInput{
+			Cause:     aws.String(fmt.Sprintf("Task input must be array of strings: %s", err.Error())),
+			TaskToken: &taskToken,
+		})
+		return TaskRunner{}
 	}
 
-	// postfix the results of previous jobs on the cmd passed through
-	// the CLI
+	// append the input on the cmd passed through the CLI
 	// example:
-	// 		batchcli -cmd echo hello there
-	// 		results = [{"json":"true"}, {}]
-	//      exec(echo, ["hello", "there", '{"json":"true"}', '{}'])
-	inputs := append(args, job.Input...)
-	inputs = append(inputs, params...)
+	// 		sfncli -cmd echo how now
+	// 		input = ["brown", "cow"]
+	//      exec(echo, ["how", "now", "brown", "cow"])
+	inputs := append(args, params...)
 
 	return TaskRunner{
-		job,
-		store,
-		cmd,
-		inputs,
-	}, nil
+		sfnapi:    sfnapi,
+		taskToken: taskToken,
+		cmd:       cmd,
+		inputs:    inputs,
+	}
 }

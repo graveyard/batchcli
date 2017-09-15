@@ -1,93 +1,104 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Clever/batchcli/runner"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/sfn"
 )
 
 func main() {
-	functionCmd := flag.String("cmd", "", "The command to run")
-	localRun := flag.Bool("local", false, "Local mode - auto-assigns random AWS Batch config")
+	activityName := flag.String("name", "", "The activity name to register with AWS Step Functions")
+	activityCmd := flag.String("cmd", "", "The command to run to process activity tasks")
+	sfnRegion := flag.String("region", "", "The AWS region to send Step Function API calls")
 	printVersion := flag.Bool("version", false, "Print the version and exit")
-	resultsLocation := flag.String("results-location", "workflow-results-dev", "name of the table for getting and setting job results")
-	//parseArgs := flag.Bool("parseargs", true, "If false send the job payload directly to the cmd as its first argument without parsing it")
 
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Println(Version)
+		//fmt.Println(Version)
 		os.Exit(0)
 	}
 
-	if *functionCmd == "" {
-		fmt.Println("Required command to execute")
+	if *activityName == "" {
+		fmt.Println("activityname is required")
+		os.Exit(1)
+	}
+	if *activityCmd == "" {
+		fmt.Println("cmd is required")
+		os.Exit(1)
+	}
+	if *sfnRegion == "" {
+		fmt.Println("region is required")
 		os.Exit(1)
 	}
 
-	var job runner.BatchJob
-	if *localRun {
-		// TODO: allow CLI to set fake job-ids (or inputs)
-		job = runner.NewMockBatchJob([]string{})
+	ctx := context.Background()
+
+	// register the activity with AWS (it might already exist, which is ok)
+	sfnapi := sfn.New(session.New(), aws.NewConfig().WithRegion(*sfnRegion))
+	createOutput, err := sfnapi.CreateActivityWithContext(ctx, &sfn.CreateActivityInput{
+		Name: activityName,
+	})
+	if err != nil {
+		fmt.Printf("error creating activity: %s\n", err)
+		os.Exit(1)
 	} else {
-		j, err := runner.NewBatchJobFromEnv()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		fmt.Printf("running as activity: %s\n", *createOutput.ActivityArn)
+	}
+
+	// run getactivitytask and get some work
+	// getactivitytask itself claims to initiate a polling loop, but wrap it in a polling loop of our own
+	// since it seems to return every minute or so with a nil error and empty output
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("terminating GetActivityTask polling loop")
+			break
+		case <-ticker.C:
+			getATOutput, err := sfnapi.GetActivityTaskWithContext(ctx, &sfn.GetActivityTaskInput{
+				ActivityArn: createOutput.ActivityArn,
+				// WorkerName: "TODO: something useful about this process: host? pid?",
+			})
+			if err != nil {
+				fmt.Printf("error getting activity task: %s\n", err)
+				os.Exit(1)
+			}
+			if getATOutput.TaskToken == nil {
+				fmt.Println("nil task token starting GetActivityTask again")
+				continue
+			}
+			fmt.Println("got activity task", getATOutput)
+			activityTaskInput := getATOutput.Input
+			activityTaskToken := getATOutput.TaskToken
+
+			// start a heartbeat TODO
+			//  taskContext, cancelFn := context.WithCancel()
+			// go func() {
+			// 	heartbeat := time.NewTicker(10 * time.Second)
+			// 	for {
+			// 		select {
+			// 		case <-taskContext.Done():
+			// 			fmt.Println("ending heartbeat loop")
+			// 			return
+			// 		case <-hearbeat.C:
+			// 			_, err := sfnapi.
+			// 		}
+			// 	}
+			// }()
+
+			taskRunner := runner.NewTaskRunner(*activityCmd, flag.Args(), sfnapi, *activityTaskInput, *activityTaskToken)
+			if err := taskRunner.Process(ctx); err != nil {
+				fmt.Printf("error running process: %s\n", err)
+				continue
+			}
 		}
-		job = j
 	}
-
-	if *resultsLocation == "" {
-		fmt.Println("-results-location can not be an empty string")
-		os.Exit(1)
-	}
-
-	// TODO: figure out a better way to switch between prod/dev resultsLocations
-	// currently using env var since that easily works across docker containers
-	// which specify `CMD [..]` or `ENTRYPOINT [...]`
-	if strings.Contains(os.Getenv("AWS_BATCH_JQ_NAME"), "production") {
-		*resultsLocation = "workflow-results"
-	}
-
-	store, err := initalizeStore(*localRun, *resultsLocation)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	taskRunner, err := runner.NewTaskRunner(*functionCmd, flag.Args(), job, store)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	if err := taskRunner.Process(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	// TODO: fix this with a chan and proper buffer handling
-	// wait a sec for the output buffer to process
-
-	time.Sleep(1 * time.Second)
-	os.Exit(0)
-}
-
-func initalizeStore(localRun bool, resultsLocation string) (runner.ResultsStore, error) {
-	// TODO: use fake dynamo for localRun
-	config := aws.NewConfig().WithRegion("us-east-1")
-	sess, err := session.NewSession(config)
-	if err != nil {
-		return runner.DynamoStore{}, nil
-	}
-	client := dynamodb.New(sess)
-
-	return runner.NewDynamoStore(client, resultsLocation)
 }
