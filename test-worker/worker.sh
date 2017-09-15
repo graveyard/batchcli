@@ -4,12 +4,12 @@ set -e
 
 STEP=$1
 
-if [ "$STEP" == "echo" ]; then
-	echo "curl" # payload for next step
+if [ "$STEP" == "echo-test" ]; then
+	echo "curl-test" # payload for next step
 	exit $?
 fi
 
-if [ "$STEP" == "curl" ]; then
+if [ "$STEP" == "curl-test" ]; then
 	RESULT=`curl -s -o /dev/null -i -w "%{http_code}" https://production--workflow-manager.int.clever.com/_health`
 	if [ "$RESULT" == "200" ]; then
 		echo "success" # TODO payload for next test
