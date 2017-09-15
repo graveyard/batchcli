@@ -1,5 +1,7 @@
 run:
   type: workflow
+env:
+  - TEST_URL
 resources:
   cpu: 0.01
   max_mem: 0.02

@@ -10,7 +10,7 @@ if [ "$STEP" == "echo-test" ]; then
 fi
 
 if [ "$STEP" == "curl-test" ]; then
-	RESULT=`curl -s -o /dev/null -i -w "%{http_code}" https://production--workflow-manager.int.clever.com/_health`
+	RESULT=`curl -s -o /dev/null -i -w "%{http_code}" $TEST_URL`
 	if [ "$RESULT" == "200" ]; then
 		echo "success" # TODO payload for next test
 		exit 0
