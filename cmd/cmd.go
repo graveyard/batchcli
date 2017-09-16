@@ -66,6 +66,7 @@ func main() {
 			getATOutput, err := sfnapi.GetActivityTaskWithContext(ctx, &sfn.GetActivityTaskInput{
 				ActivityArn: createOutput.ActivityArn,
 				// WorkerName: "TODO: something useful about this process: host? pid?",
+				WorkerName: aws.String("container-task-could-go-here"),
 			})
 			if err != nil {
 				fmt.Printf("error getting activity task: %s\n", err)
