@@ -12,14 +12,12 @@ COMPRESSED_BUILDS := $(BUILDS:%=%.tar.gz)
 RELEASE_ARTIFACTS := $(COMPRESSED_BUILDS:build/%=release/%)
 .PHONY: test $(PKGS) clean release install_deps
 
-$(eval $(call golang-version-check,1.8))
+$(eval $(call golang-version-check,1.9))
 
 all: test build
 
 test: $(PKGS)
 
-$(GOPATH)/bin/glide:
-	@go get github.com/Masterminds/glide
 
 $(PKGS): golang-test-all-deps cmd/version.go
 	$(call golang-test-all,$@)
@@ -50,5 +48,7 @@ clean:
 	rm -rf build release
 	rm cmd/version.go
 
-install_deps: $(GOPATH)/bin/glide
-	@$(GOPATH)/bin/glide install
+
+
+install_deps: golang-dep-vendor-deps
+	$(call golang-dep-vendor)
