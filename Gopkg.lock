@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/Clever/batchcli"
-  packages = ["runner"]
-  revision = "650b45fbcd870a731055adccf8785b54b65bbaba"
-  version = "0.0.12"
-
-[[projects]]
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -87,6 +81,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9200fc44ca4dc56eae01b80bafd32d88af36aaffd3528c771b327e52fd19214f"
+  inputs-digest = "4b33dba2332f667d908787a7008019565c852b889023b2df4fdf81a734643921"
   solver-name = "gps-cdcl"
   solver-version = 1
