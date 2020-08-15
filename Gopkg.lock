@@ -2,6 +2,7 @@
 
 
 [[projects]]
+  digest = "1:a6a7dae645592151d289d22b8bba39e9a91527737c6b58aaf5c489efaae43ec7"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -31,56 +32,79 @@
     "private/protocol/xml/xmlutil",
     "service/dynamodb",
     "service/dynamodb/dynamodbiface",
-    "service/sts"
+    "service/sts",
   ]
+  pruneopts = ""
   revision = "63324a33d7e42a386c04d4daec764a3de243492e"
   version = "v1.13.0"
 
 [[projects]]
+  digest = "1:a00483fe4106b86fb1187a92b5cf6915c85f294ed4c129ccbe7cb1f1a06abd46"
   name = "github.com/go-ini/ini"
   packages = ["."]
+  pruneopts = ""
   revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
   version = "v1.32.0"
 
 [[projects]]
+  digest = "1:6f49eae0c1e5dab1dafafee34b207aeb7a42303105960944828c2079b92fc88e"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
+  pruneopts = ""
   revision = "0b12d6b5"
 
 [[projects]]
+  digest = "1:51f81b00e2e19324358c998712da59c5496f1dea6040f80c2c489d1899a350b6"
   name = "github.com/xeipuuv/gojsonpointer"
   packages = ["."]
+  pruneopts = ""
   revision = "e0fe6f68307607d540ed8eac07a342c33fa1b54a"
 
 [[projects]]
   branch = "master"
+  digest = "1:feb667646650e600036a4731f959e746eb755970fc2c8a3d54c66a0cde7ac69d"
   name = "github.com/xeipuuv/gojsonreference"
   packages = ["."]
+  pruneopts = ""
   revision = "e02fc20de94c78484cd5ffb007f8af96be030a45"
 
 [[projects]]
+  branch = "master"
+  digest = "1:225b26e2d1bcccbb48495d411cd38c73a5abd82ead929364b2bc73f1b3172aba"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
-  revision = "e18f0065e8c148fcf567ac43a3f8f5b66ac0720b"
+  pruneopts = ""
+  revision = "065759f9c3d72653843069184bab4f5622926edf"
 
 [[projects]]
+  digest = "1:0923ed679d96b9e53b8c43892e2094ebb5dccd0a66709b20c90f43c37ff71ff1"
   name = "gopkg.in/Clever/kayvee-go.v6"
   packages = [
     ".",
     "logger",
-    "router"
+    "router",
   ]
-  revision = "46dcd0a150bd16e7462efd62c755a2fce8237dfc"
-  version = "v6.5.3"
+  pruneopts = ""
+  revision = "1c544ce9daf62e3673f4f1ba0bffde53cd13f502"
+  version = "v6.24.0"
 
 [[projects]]
+  branch = "v2"
+  digest = "1:0963c61acf879ae8b78a659a2864016eb61020c46c93f402041684b80d5963b6"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "a5b47d31c556af34a302ce5d659e6fea44d90de0"
+  pruneopts = ""
+  revision = "b893565b90ca5ebaabd27e535c0e56f97856e5ff"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4b33dba2332f667d908787a7008019565c852b889023b2df4fdf81a734643921"
+  input-imports = [
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/dynamodb",
+    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface",
+    "gopkg.in/Clever/kayvee-go.v6/logger",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
